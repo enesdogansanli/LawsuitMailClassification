@@ -1,0 +1,2 @@
+# LAWSUIT MAIL CLASSIFICATION
+Bu projenin amacı hukuk bürolarına genel ve dava için önem arz eden hukuki mailleri başarılı bir şekilde sınıflandırılarak dava süreçlerinin hızlandırılmasına yardım etmekdir.
