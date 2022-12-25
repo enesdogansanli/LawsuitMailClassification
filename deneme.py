@@ -14,6 +14,7 @@ from sklearn import metrics
 import pickle
 import pandas as pd
 import re
+from sklearn.model_selection import GridSearchCV
 
 
 # TODO:
@@ -156,7 +157,25 @@ def train_classifier(docs):
     
     dtm = vectorizer.fit_transform(X_train)
 
-    naive_bayes_classifier = MultinomialNB().fit(dtm,y_train)
+    # Naive Bayes
+    params_naive = {
+    'alpha' : [1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0],
+    'fit_prior': [True,False]
+    }
+
+    naive_clsf = GridSearchCV(
+    estimator=MultinomialNB(),
+    param_grid=params_naive,
+    cv = 5,
+    n_jobs=5,
+    verbose=1
+    )
+
+    naive_clsf.fit(dtm,y_train)
+
+    naive_params = naive_clsf.best_params_
+
+    naive_bayes_classifier = MultinomialNB(alpha=naive_params['alpha'],fit_prior=naive_params['fit_prior']).fit(dtm,y_train)
 
     evaluate_classifier("Naive Bayes\tTRAIN\t",naive_bayes_classifier,vectorizer,X_train,y_train)
     evaluate_classifier("Naive Bayes\tTEST\t",naive_bayes_classifier,vectorizer,X_test,y_test)
@@ -168,22 +187,64 @@ def train_classifier(docs):
     vec_filename = 'count_vectorizer.pkl'
     pickle.dump(vectorizer,open(vec_filename,'wb'))
 
-    decision_tree_classifier = DecisionTreeClassifier().fit(dtm,y_train)
 
-    evaluate_classifier("Decision Tree\tTRAIN\t",decision_tree_classifier,vectorizer,X_train,y_train)
-    evaluate_classifier("Decision Tree\tTEST\t",decision_tree_classifier,vectorizer,X_test,y_test)
+    # Decision Tree
+    # params_decision = {
+    # 'criterion' : ["gini", "entropy", "log_loss"],
+    # 'splitter' : ["best", "random"],
+    # 'min_samples_leaf' : [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+    # 'max_depth' : [11,12,13,14,15,16,17,18,19,20]
+    # }
 
-    clf_filename='decision_tree_classifier.pkl'
-    pickle.dump(decision_tree_classifier, open(clf_filename,'wb'))
+    # decision_clsf = GridSearchCV(
+    # estimator=DecisionTreeClassifier(),
+    # param_grid=params_decision,
+    # cv = 5,
+    # n_jobs=5,
+    # verbose=1
+    # )
+
+    # decision_clsf.fit(dtm,y_train)
+
+    # decision_params = decision_clsf.best_params_
+
+    # decision_tree_classifier = DecisionTreeClassifier(criterion=decision_params['criterion'],splitter=decision_params['splitter'],
+    #                                                     min_samples_leaf=decision_params['min_samples_leaf'],max_depth=decision_params['max_depth']).fit(dtm,y_train)
+
+    # evaluate_classifier("Decision Tree\tTRAIN\t",decision_tree_classifier,vectorizer,X_train,y_train)
+    # evaluate_classifier("Decision Tree\tTEST\t",decision_tree_classifier,vectorizer,X_test,y_test)
+
+    # clf_filename='decision_tree_classifier.pkl'
+    # pickle.dump(decision_tree_classifier, open(clf_filename,'wb'))
 
 
-    knn_classifier = KNeighborsClassifier().fit(dtm,y_train)
+    # KNN 
+    # params_knn = {
+    # 'n_neighbors' : [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+    # 'weights' : ['uniform', 'distance'],
+    # 'leaf_size' : [10,20,30,40,50],
+    # }
 
-    evaluate_classifier("KNN Classifier\tTRAIN\t",knn_classifier,vectorizer,X_train,y_train)
-    evaluate_classifier("KNN Classifier\tTEST\t",knn_classifier,vectorizer,X_test,y_test)
+    # knn_clsf = GridSearchCV(
+    # estimator=KNeighborsClassifier(),
+    # param_grid=params_knn,
+    # cv = 5,
+    # n_jobs=5,
+    # verbose=1
+    # )
 
-    clf_filename='knn_classifier.pkl'
-    pickle.dump(knn_classifier, open(clf_filename,'wb'))
+    # knn_clsf.fit(dtm,y_train)
+
+    # knn_params = knn_clsf.best_params_
+
+    # knn_classifier = KNeighborsClassifier(n_neighbors=knn_params['n_neighbors'],weights=knn_params['weights'],
+    #                                         leaf_size=['leaf_size']).fit(dtm,y_train)
+
+    # evaluate_classifier("KNN Classifier\tTRAIN\t",knn_classifier,vectorizer,X_train,y_train)
+    # evaluate_classifier("KNN Classifier\tTEST\t",knn_classifier,vectorizer,X_test,y_test)
+
+    # clf_filename='knn_classifier.pkl'
+    # pickle.dump(knn_classifier, open(clf_filename,'wb'))
 
 
 def classify(text):
@@ -196,6 +257,39 @@ def classify(text):
     pred = nb_clf.predict(vectorizer.transform([text]))
 
     print(pred[0])
+
+def findFalsePredict():
+
+    clf_filename = 'naive_bayes_classifier.pkl'
+    nb_clf = pickle.load(open(clf_filename,'rb'))
+
+    vec_filename = 'count_vectorizer.pkl'
+    vectorizer =pickle.load(open(vec_filename,'rb'))
+
+    wronglist = [] # Yanlış tahmin edilen cümleler
+
+    for i in range(len(LABELS)):
+        for j in range(1,DOCUMENTS[LABELS[i]][0]):
+            if j<10:
+                with open('data/{}/00{}.txt'.format(LABELS[i],j),"r",encoding='utf8') as d:
+                    oku = d.read()
+                    pred = nb_clf.predict(vectorizer.transform([oku]))
+                    if pred[0]!=LABELS[i]:
+                        wronglist.append(oku)
+            elif 9<j<100:
+                with open('data/{}/0{}.txt'.format(LABELS[i],j),"r",encoding='utf8') as d:
+                    oku = d.read()
+                    pred = nb_clf.predict(vectorizer.transform([oku]))
+                    if pred[0]!=LABELS[i]:
+                        wronglist.append(oku)
+            else:
+                with open('data/{}/{}.txt'.format(LABELS[i],j),"r",encoding='utf8') as d:
+                    oku = d.read()
+                    pred = nb_clf.predict(vectorizer.transform([oku]))
+                    if pred[0]!=LABELS[i]:
+                        wronglist.append(oku)
+    
+    return wronglist
 
 
 if __name__=='__main__':
@@ -210,3 +304,6 @@ if __name__=='__main__':
     new_doc = " Temsil yetkisi, bir şubenin işleriyle sınırlandırılabilir. Temsil yetkisi, birden çok kişinin birlikte imza atmaları koşuluyla da sınırlandırılabilir. Bu durumda, diğerlerinin katılımı olmaksızın temsilcilerden birinin imza atmış olması, işletme sahibini bağlamaz. Temsil yetkisine ilişkin yukarıdaki sınırlamalar, ticaret siciline tescil edilmedikçe, iyiniyetli üçüncü kişilere karşı hüküm doğurmaz."
 
     classify(new_doc)
+
+    wronglist = findFalsePredict()
+    print(len(wronglist))
