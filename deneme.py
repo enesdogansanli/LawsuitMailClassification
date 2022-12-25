@@ -1,25 +1,42 @@
 import os
 import random
 import string
+import nltk
 from nltk import word_tokenize
 from collections import defaultdict
 from nltk import FreqDist
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.tree import DecisionTreeClassifier
 from sklearn import metrics
 import pickle
+import pandas as pd
+import re
 
 
 # TODO:
-# Veri ayırma işlemi daha farklı yapılabilir. Biraz ilkel gibi.
+# Veri ayırma işlemi(train-test) daha farklı yapılabilir. Biraz ilkel gibi.
 # Stopword kısmını araştır.
 
 # Türkçe için stop word kelimelerin çıkarılması gerekmekte.
-stop_words = set(stopwords.words('english'))
-stop_words.add('said')
-stop_words.add('mr')
 
+nltk.download('stopwords')
+nltk.download('punkt')
+stop_words = stopwords.words('turkish')
+add_some_words = ['1','2','bir','3','4','5','6','7','8','9','md','–','i','“','”','iki','üç','dört','beş','altı','yedi','sekiz','dokuz','on','a','b','c','d',
+                    'ceza','sayılı','karar','hâkim','kanunun','madde','savcı','mahkeme','inci','olarak','suç','olan','diğer','ilişkin','ii','yer','kararı','tarafından',
+                    'isteyebilir','içinde','genel','ancak','ek','sonra','göre','karşı','üncü','üçüncü','verilir']
+stop_words.extend(add_some_words)
+
+
+DOCUMENTS = {'Ceza_Muhakemesi_Kanunu': (330,'Madde'),
+            'Hukuk_Muhakemeleri_Kanunu': (440,'MADDE'),
+            'Icra_Iflas_Kanunu':(360,'Madde'),
+            'Turk_Borclar_Kanunu':(630,'MADDE'),
+            'Turk_Ceza_Kanunu':(340,'Madde'),
+            'Turk_Medeni_Kanunu':(998,'Madde'),
+            'Turk_Ticaret_Kanunu':(998,'MADDE')}
 LABELS = ['Ceza_Muhakemesi_Kanunu','Hukuk_Muhakemeleri_Kanunu','Icra_Iflas_Kanunu','Turk_Borclar_Kanunu','Turk_Ceza_Kanunu','Turk_Medeni_Kanunu','Turk_Ticaret_Kanunu']
 BASE_DIR = 'data'
 
@@ -37,17 +54,41 @@ def create_data_set():
 
 def setup_docs():
     docs=[]
-    with open('data.txt','r',encoding='utf8') as datafile:
-        for row in datafile:
-            parts =row.split('\t')
-            doc = (parts[0],parts[2].strip())
-            docs.append(doc)
+    mylist1 = [] # Title
+    mylist2 = [] # Text
+
+    for i in range(len(LABELS)):
+        for j in range(1,DOCUMENTS[LABELS[i]][0]):
+            if j<10:
+                with open('data/{}/00{}.txt'.format(LABELS[i],j),"r",encoding='utf8') as d:
+                    oku = d.read()
+                    mylist1.append(LABELS[i])
+                    mylist2.append(oku)
+            elif 9<j<100:
+                with open('data/{}/0{}.txt'.format(LABELS[i],j),"r",encoding='utf8') as d:
+                    oku = d.read()
+                    mylist1.append(LABELS[i])
+                    mylist2.append(oku)
+            else:
+                with open('data/{}/{}.txt'.format(LABELS[i],j),"r",encoding='utf8') as d:
+                    oku = d.read()
+                    mylist1.append(LABELS[i])
+                    mylist2.append(oku)
+
+    df = pd.DataFrame(list(zip(mylist1, mylist2)),
+                columns =['Class', 'Text'])
+
+    for i in range(len(df)):
+        doc = (df['Class'][i],df['Text'][i])
+        docs.append(doc)
+
     return docs
 
 
 def clean_text(text):
     text = text.translate(str.maketrans('', '', string.punctuation))
     text = text.lower()
+    text = re.sub(r"[0 - 9]", " ", text)
     return text
 
 
@@ -99,18 +140,17 @@ def evaluate_classifier(title,classifier,vectorizer, X_test, y_test):
     X_test_tfidf = vectorizer.transform(X_test)
     y_pred = classifier.predict(X_test_tfidf)
 
-    precision = metrics.precision_score (y_test,y_pred)
-    recall = metrics.recall_score(y_test,y_pred)
-    f1 = metrics.f1_score(y_test,y_pred)
+    precision = metrics.precision_score (y_test,y_pred,average='micro')
+    recall = metrics.recall_score(y_test,y_pred,average='micro')
+    f1 = metrics.f1_score(y_test,y_pred,average='micro')
 
-    print("%s\t%f\t%f\%f\n" % (title, precision, recall, f1))
+    print("%s\t%f\t%f \t%f\n" % (title, precision, recall, f1))
 
 
 def train_classifier(docs):
     X_train, X_test, y_train, y_test = get_splits(docs)
 
-    vectorizer = CountVectorizer(stop_words='english',
-                                ngram_range=(1,3),
+    vectorizer = CountVectorizer(ngram_range=(1,3),
                                 min_df= 3, analyzer = 'word')
     
     dtm = vectorizer.fit_transform(X_train)
@@ -127,6 +167,14 @@ def train_classifier(docs):
     vec_filename = 'count_vectorizer.pkl'
     pickle.dump(vectorizer,open(vec_filename,'wb'))
 
+    decision_tree_classifier = DecisionTreeClassifier().fit(dtm,y_train)
+
+    evaluate_classifier("Decision Tree\tTRAIN\t",decision_tree_classifier,vectorizer,X_train,y_train)
+    evaluate_classifier("Decision Tree\tTEST\t",decision_tree_classifier,vectorizer,X_test,y_test)
+
+    clf_filename='decision_tree_classifier.pkl'
+    pickle.dump(decision_tree_classifier, open(clf_filename,'wb'))
+
 
 def classify(text):
     clf_filename = 'naive_bayes_classifier.pkl'
@@ -141,14 +189,14 @@ def classify(text):
 
 
 if __name__=='__main__':
-    create_data_set()
+    # create_data_set()
 
     docs = setup_docs()
 
-    print_frequency_dist(docs)
+    # print_frequency_dist(docs)
 
     train_classifier(docs)
 
-    new_doc = "Some text write is here"
+    new_doc = " Temsil yetkisi, bir şubenin işleriyle sınırlandırılabilir. Temsil yetkisi, birden çok kişinin birlikte imza atmaları koşuluyla da sınırlandırılabilir. Bu durumda, diğerlerinin katılımı olmaksızın temsilcilerden birinin imza atmış olması, işletme sahibini bağlamaz. Temsil yetkisine ilişkin yukarıdaki sınırlamalar, ticaret siciline tescil edilmedikçe, iyiniyetli üçüncü kişilere karşı hüküm doğurmaz."
 
     classify(new_doc)
