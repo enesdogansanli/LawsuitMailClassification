@@ -9,6 +9,7 @@ from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn import metrics
 import pickle
 import pandas as pd
@@ -174,6 +175,15 @@ def train_classifier(docs):
 
     clf_filename='decision_tree_classifier.pkl'
     pickle.dump(decision_tree_classifier, open(clf_filename,'wb'))
+
+
+    knn_classifier = KNeighborsClassifier().fit(dtm,y_train)
+
+    evaluate_classifier("KNN Classifier\tTRAIN\t",knn_classifier,vectorizer,X_train,y_train)
+    evaluate_classifier("KNN Classifier\tTEST\t",knn_classifier,vectorizer,X_test,y_test)
+
+    clf_filename='knn_classifier.pkl'
+    pickle.dump(knn_classifier, open(clf_filename,'wb'))
 
 
 def classify(text):
