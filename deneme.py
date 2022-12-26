@@ -15,6 +15,7 @@ import pickle
 import pandas as pd
 import re
 from sklearn.model_selection import GridSearchCV
+import matplotlib.pyplot as plt
 
 
 # TODO:
@@ -53,6 +54,17 @@ def create_data_set():
                     text = file.read().decode(errors='replace').replace('\n', '')
                     outfile.write('%s\t%s\t%s\n' % (label,filename, text))
 
+
+def PlotData():
+    names = ['Ceza M.','Hukuk M.','İcra','Borçlar','Ceza','Medeni','Ticaret']
+    value = []
+    for i in range(len(LABELS)):
+        value.append(DOCUMENTS[LABELS[i]][0])
+    
+    plt.bar(names,value)
+    plt.xlabel('Kanunlar')
+    plt.ylabel('Madde Sayıları')
+    plt.show()
 
 def setup_docs():
     docs=[]
@@ -142,11 +154,12 @@ def evaluate_classifier(title,classifier,vectorizer, X_test, y_test):
     X_test_tfidf = vectorizer.transform(X_test)
     y_pred = classifier.predict(X_test_tfidf)
 
+    accuracy = metrics.accuracy_score(y_test,y_pred)
     precision = metrics.precision_score (y_test,y_pred,average='micro')
-    recall = metrics.recall_score(y_test,y_pred,average='micro')
-    f1 = metrics.f1_score(y_test,y_pred,average='micro')
+    recall = metrics.recall_score(y_test,y_pred,average='macro')
+    f1 = metrics.f1_score(y_test,y_pred,average='weighted')
 
-    print("%s\t%f\t%f \t%f\n" % (title, precision, recall, f1))
+    print("%s\t%f\t%f\t%f \t%f\n" % (title,accuracy, precision, recall, f1))
 
 
 def train_classifier(docs):
@@ -188,7 +201,7 @@ def train_classifier(docs):
     pickle.dump(vectorizer,open(vec_filename,'wb'))
 
 
-    # Decision Tree
+    # # Decision Tree
     # params_decision = {
     # 'criterion' : ["gini", "entropy", "log_loss"],
     # 'splitter' : ["best", "random"],
@@ -218,7 +231,7 @@ def train_classifier(docs):
     # pickle.dump(decision_tree_classifier, open(clf_filename,'wb'))
 
 
-    # KNN 
+    # # KNN 
     # params_knn = {
     # 'n_neighbors' : [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
     # 'weights' : ['uniform', 'distance'],
@@ -289,6 +302,8 @@ def findFalsePredict():
                     if pred[0]!=LABELS[i]:
                         wronglist.append(oku)
     
+    print("Veri seti icerisinden yanlis tahmin edilen ornek sayisi: {}".format(len(wronglist)))
+
     return wronglist
 
 
@@ -301,9 +316,9 @@ if __name__=='__main__':
 
     train_classifier(docs)
 
-    new_doc = " Temsil yetkisi, bir şubenin işleriyle sınırlandırılabilir. Temsil yetkisi, birden çok kişinin birlikte imza atmaları koşuluyla da sınırlandırılabilir. Bu durumda, diğerlerinin katılımı olmaksızın temsilcilerden birinin imza atmış olması, işletme sahibini bağlamaz. Temsil yetkisine ilişkin yukarıdaki sınırlamalar, ticaret siciline tescil edilmedikçe, iyiniyetli üçüncü kişilere karşı hüküm doğurmaz."
+    # new_doc = " Taşıyıcı, zıya veya hasardan sorumlu olduğu hâllerde, 880 ilâ 882 nci maddelere göre ödenmesi gereken tazminatı ödedikten başka, taşıma ücretini geri verir ve taşıma ile ilgili vergileri, resimleri ve taşıma işi nedeniyle doğan diğer giderleri de karşılar. Ancak, hasar hâlinde, birinci cümle uyarınca yapılacak ödemeler 880 inci maddenin ikinci fıkrasına göre saptanacak bedel ile orantılı olarak belirlenir. Başkaca zararlar karşılanmaz"
+    # classify(new_doc)
 
-    classify(new_doc)
+    # wronglist = findFalsePredict()
 
-    wronglist = findFalsePredict()
-    print(len(wronglist))
+    # PlotData()
