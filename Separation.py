@@ -1,3 +1,5 @@
+# Text formatındaki verileri madde madde ayırmaya yarayan yapıdır.
+
 Lawlist = ['Ceza_Muhakemesi_Kanunu','Hukuk_Muhakemeleri_Kanunu','Icra_Iflas_Kanunu','Turk_Borclar_Kanunu','Turk_Ceza_Kanunu','Turk_Medeni_Kanunu','Turk_Ticaret_Kanunu']
 
 documents = {'Ceza_Muhakemesi_Kanunu': (330,'Madde'),

@@ -17,12 +17,14 @@ import re
 from sklearn.model_selection import GridSearchCV
 import matplotlib.pyplot as plt
 
-
-# TODO:
-# Veri ayırma işlemi(train-test) daha farklı yapılabilir. Biraz ilkel gibi.
-# Stopword kısmını araştır.
-
-# Türkçe için stop word kelimelerin çıkarılması gerekmekte.
+DOCUMENTS = {'Ceza_Muhakemesi_Kanunu': (330,'Madde'),
+            'Hukuk_Muhakemeleri_Kanunu': (440,'MADDE'),
+            'Icra_Iflas_Kanunu':(360,'Madde'),
+            'Turk_Borclar_Kanunu':(630,'MADDE'),
+            'Turk_Ceza_Kanunu':(340,'Madde'),
+            'Turk_Medeni_Kanunu':(998,'Madde'),
+            'Turk_Ticaret_Kanunu':(998,'MADDE')}
+LABELS = ['Ceza_Muhakemesi_Kanunu','Hukuk_Muhakemeleri_Kanunu','Icra_Iflas_Kanunu','Turk_Borclar_Kanunu','Turk_Ceza_Kanunu','Turk_Medeni_Kanunu','Turk_Ticaret_Kanunu']
 
 nltk.download('stopwords')
 nltk.download('punkt')
@@ -32,30 +34,10 @@ add_some_words = ['1','2','bir','3','4','5','6','7','8','9','md','–','i','“'
                     'isteyebilir','içinde','genel','ancak','ek','sonra','göre','karşı','üncü','üçüncü','verilir']
 stop_words.extend(add_some_words)
 
-
-DOCUMENTS = {'Ceza_Muhakemesi_Kanunu': (330,'Madde'),
-            'Hukuk_Muhakemeleri_Kanunu': (440,'MADDE'),
-            'Icra_Iflas_Kanunu':(360,'Madde'),
-            'Turk_Borclar_Kanunu':(630,'MADDE'),
-            'Turk_Ceza_Kanunu':(340,'Madde'),
-            'Turk_Medeni_Kanunu':(998,'Madde'),
-            'Turk_Ticaret_Kanunu':(998,'MADDE')}
-LABELS = ['Ceza_Muhakemesi_Kanunu','Hukuk_Muhakemeleri_Kanunu','Icra_Iflas_Kanunu','Turk_Borclar_Kanunu','Turk_Ceza_Kanunu','Turk_Medeni_Kanunu','Turk_Ticaret_Kanunu']
-BASE_DIR = 'data'
-
-def create_data_set():
-    with open('data.txt','w',encoding='utf8') as outfile:
-        for label in LABELS:
-            dir = '%s/%s' % (BASE_DIR,label)
-            for filename in os.listdir(dir):
-                fullfilname = '%s/%s' % (dir,filename)
-                print(fullfilname)
-                with open (fullfilname,'rb') as file:
-                    text = file.read().decode(errors='replace').replace('\n', '')
-                    outfile.write('%s\t%s\t%s\n' % (label,filename, text))
-
-
 def PlotData():
+    '''
+    Veri setindeki herbir kanundan kaç adet madde kullanıldığını grafik olarak göstermeye yararyan fonksiyondur.
+    '''
     names = ['Ceza M.','Hukuk M.','İcra','Borçlar','Ceza','Medeni','Ticaret']
     value = []
     for i in range(len(LABELS)):
@@ -67,6 +49,9 @@ def PlotData():
     plt.show()
 
 def setup_docs():
+    '''
+    Text formatındaki veriyi dosyalardan okuyarak DataFrame yapısında tutulmasını sağlayan fonksiyondur.
+    '''
     docs=[]
     mylist1 = [] # Title
     mylist2 = [] # Text
@@ -98,13 +83,17 @@ def setup_docs():
 
     return docs
 
-
 def clean_text(text):
+    '''
+    Verilen text dosyasına küçük harfe dönüşümü uygulayan ve sayıları metin içerisinden çıkaran fonksiyondur.
+
+    Parametre
+        text : Text
+    '''
     text = text.translate(str.maketrans('', '', string.punctuation))
     text = text.lower()
     text = re.sub(r"[0 - 9]", " ", text)
     return text
-
 
 def get_tokens(text):
      tokens = word_tokenize(text)
@@ -112,6 +101,12 @@ def get_tokens(text):
      return tokens
 
 def print_frequency_dist(docs):
+    '''
+    Herbir kanun içerisindeki en çok geçen kelimeleri yazdırmaya yarayan fonksiyondur.
+
+    Parametre
+        docs : List
+    '''
     tokens = defaultdict(list)
 
     for doc in docs:
@@ -129,7 +124,12 @@ def print_frequency_dist(docs):
 
 
 def get_splits(docs):
-    # Karıştırma işlemi
+    '''
+    Verilen veri setinin karıştırılmasını ve train-test olarak ayrılmasını sağlayan fonksiyondur.
+
+    Parametre 
+        docs : List
+    '''
     random.shuffle(docs)
 
     X_train = []
@@ -151,6 +151,16 @@ def get_splits(docs):
     return X_train,X_test,y_train, y_test
 
 def evaluate_classifier(title,classifier,vectorizer, X_test, y_test):
+    '''
+    Verilen modelin başarı metrik sonuçlarını yazdıran fonksiyondur.
+
+    Parametre
+        title : String
+        classifier : Model
+        vectorizer : Vectorizer
+        X_test : X_test
+        y_test : y_test
+    '''
     X_test_tfidf = vectorizer.transform(X_test)
     y_pred = classifier.predict(X_test_tfidf)
 
@@ -163,6 +173,12 @@ def evaluate_classifier(title,classifier,vectorizer, X_test, y_test):
 
 
 def train_classifier(docs):
+    '''
+    Verilen veri ile modellerin en iyi parametrelerinin bulunmasını ve modellerin eğitilmesini sağlayan fonksiyondur.
+
+    Parametre
+        docs : List
+    '''
     X_train, X_test, y_train, y_test = get_splits(docs)
 
     vectorizer = CountVectorizer(ngram_range=(1,3),
@@ -193,7 +209,6 @@ def train_classifier(docs):
     evaluate_classifier("Naive Bayes\tTRAIN\t",naive_bayes_classifier,vectorizer,X_train,y_train)
     evaluate_classifier("Naive Bayes\tTEST\t",naive_bayes_classifier,vectorizer,X_test,y_test)
 
-    # Sürekli olarak model eğitimi yapmamak için modellerimizi kaydediyoruz galiba.
     clf_filename='naive_bayes_classifier.pkl'
     pickle.dump(naive_bayes_classifier, open(clf_filename,'wb'))
 
@@ -201,66 +216,72 @@ def train_classifier(docs):
     pickle.dump(vectorizer,open(vec_filename,'wb'))
 
 
-    # # Decision Tree
-    # params_decision = {
-    # 'criterion' : ["gini", "entropy", "log_loss"],
-    # 'splitter' : ["best", "random"],
-    # 'min_samples_leaf' : [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
-    # 'max_depth' : [11,12,13,14,15,16,17,18,19,20]
-    # }
+    # Decision Tree
+    params_decision = {
+    'criterion' : ["gini", "entropy", "log_loss"],
+    'splitter' : ["best", "random"],
+    'min_samples_leaf' : [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+    'max_depth' : [11,12,13,14,15,16,17,18,19,20]
+    }
 
-    # decision_clsf = GridSearchCV(
-    # estimator=DecisionTreeClassifier(),
-    # param_grid=params_decision,
-    # cv = 5,
-    # n_jobs=5,
-    # verbose=1
-    # )
+    decision_clsf = GridSearchCV(
+    estimator=DecisionTreeClassifier(),
+    param_grid=params_decision,
+    cv = 5,
+    n_jobs=5,
+    verbose=1
+    )
 
-    # decision_clsf.fit(dtm,y_train)
+    decision_clsf.fit(dtm,y_train)
 
-    # decision_params = decision_clsf.best_params_
+    decision_params = decision_clsf.best_params_
 
-    # decision_tree_classifier = DecisionTreeClassifier(criterion=decision_params['criterion'],splitter=decision_params['splitter'],
-    #                                                     min_samples_leaf=decision_params['min_samples_leaf'],max_depth=decision_params['max_depth']).fit(dtm,y_train)
+    decision_tree_classifier = DecisionTreeClassifier(criterion=decision_params['criterion'],splitter=decision_params['splitter'],
+                                                        min_samples_leaf=decision_params['min_samples_leaf'],max_depth=decision_params['max_depth']).fit(dtm,y_train)
 
-    # evaluate_classifier("Decision Tree\tTRAIN\t",decision_tree_classifier,vectorizer,X_train,y_train)
-    # evaluate_classifier("Decision Tree\tTEST\t",decision_tree_classifier,vectorizer,X_test,y_test)
+    evaluate_classifier("Decision Tree\tTRAIN\t",decision_tree_classifier,vectorizer,X_train,y_train)
+    evaluate_classifier("Decision Tree\tTEST\t",decision_tree_classifier,vectorizer,X_test,y_test)
 
-    # clf_filename='decision_tree_classifier.pkl'
-    # pickle.dump(decision_tree_classifier, open(clf_filename,'wb'))
+    clf_filename='decision_tree_classifier.pkl'
+    pickle.dump(decision_tree_classifier, open(clf_filename,'wb'))
 
 
-    # # KNN 
-    # params_knn = {
-    # 'n_neighbors' : [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
-    # 'weights' : ['uniform', 'distance'],
-    # 'leaf_size' : [10,20,30,40,50],
-    # }
+    # KNN 
+    params_knn = {
+    'n_neighbors' : [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+    'weights' : ['uniform', 'distance'],
+    'leaf_size' : [10,20,30,40,50],
+    }
 
-    # knn_clsf = GridSearchCV(
-    # estimator=KNeighborsClassifier(),
-    # param_grid=params_knn,
-    # cv = 5,
-    # n_jobs=5,
-    # verbose=1
-    # )
+    knn_clsf = GridSearchCV(
+    estimator=KNeighborsClassifier(),
+    param_grid=params_knn,
+    cv = 5,
+    n_jobs=5,
+    verbose=1
+    )
 
-    # knn_clsf.fit(dtm,y_train)
+    knn_clsf.fit(dtm,y_train)
 
-    # knn_params = knn_clsf.best_params_
+    knn_params = knn_clsf.best_params_
 
-    # knn_classifier = KNeighborsClassifier(n_neighbors=knn_params['n_neighbors'],weights=knn_params['weights'],
-    #                                         leaf_size=['leaf_size']).fit(dtm,y_train)
+    knn_classifier = KNeighborsClassifier(n_neighbors=knn_params['n_neighbors'],weights=knn_params['weights'],
+                                            leaf_size=['leaf_size']).fit(dtm,y_train)
 
-    # evaluate_classifier("KNN Classifier\tTRAIN\t",knn_classifier,vectorizer,X_train,y_train)
-    # evaluate_classifier("KNN Classifier\tTEST\t",knn_classifier,vectorizer,X_test,y_test)
+    evaluate_classifier("KNN Classifier\tTRAIN\t",knn_classifier,vectorizer,X_train,y_train)
+    evaluate_classifier("KNN Classifier\tTEST\t",knn_classifier,vectorizer,X_test,y_test)
 
-    # clf_filename='knn_classifier.pkl'
-    # pickle.dump(knn_classifier, open(clf_filename,'wb'))
+    clf_filename='knn_classifier.pkl'
+    pickle.dump(knn_classifier, open(clf_filename,'wb'))
 
 
 def classify(text):
+    '''
+    Verilen metni kaydedilmiş modeller üzerinden tahmin eder ve tahmin sonucunu döndürür.
+
+    Parametre
+        text : String
+    '''
     clf_filename = 'naive_bayes_classifier.pkl'
     nb_clf = pickle.load(open(clf_filename,'rb'))
 
@@ -272,7 +293,9 @@ def classify(text):
     print(pred[0])
 
 def findFalsePredict():
-
+    '''
+    Kaydedilen modeller üzerinden tahmin işlemlerleri ve gerçek değerler karşılaştırılarak yanlış tahmin edilen verilerin belirlenmesini sağlar.
+    '''
     clf_filename = 'naive_bayes_classifier.pkl'
     nb_clf = pickle.load(open(clf_filename,'rb'))
 
@@ -308,17 +331,16 @@ def findFalsePredict():
 
 
 if __name__=='__main__':
-    # create_data_set()
-
     docs = setup_docs()
 
-    # print_frequency_dist(docs)
+    print_frequency_dist(docs)
 
     train_classifier(docs)
 
+    wronglist = findFalsePredict()
+
+    PlotData()
+
+    # Verilen bir metnin hangi sınıfa ait olduğunu tahmin etme işlemi !
     # new_doc = " Taşıyıcı, zıya veya hasardan sorumlu olduğu hâllerde, 880 ilâ 882 nci maddelere göre ödenmesi gereken tazminatı ödedikten başka, taşıma ücretini geri verir ve taşıma ile ilgili vergileri, resimleri ve taşıma işi nedeniyle doğan diğer giderleri de karşılar. Ancak, hasar hâlinde, birinci cümle uyarınca yapılacak ödemeler 880 inci maddenin ikinci fıkrasına göre saptanacak bedel ile orantılı olarak belirlenir. Başkaca zararlar karşılanmaz"
     # classify(new_doc)
-
-    # wronglist = findFalsePredict()
-
-    # PlotData()
