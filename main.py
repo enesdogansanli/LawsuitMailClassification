@@ -209,10 +209,10 @@ def train_classifier(docs):
     evaluate_classifier("Naive Bayes\tTRAIN\t",naive_bayes_classifier,vectorizer,X_train,y_train)
     evaluate_classifier("Naive Bayes\tTEST\t",naive_bayes_classifier,vectorizer,X_test,y_test)
 
-    clf_filename='naive_bayes_classifier.pkl'
+    clf_filename='models/naive_bayes_classifier.pkl'
     pickle.dump(naive_bayes_classifier, open(clf_filename,'wb'))
 
-    vec_filename = 'count_vectorizer.pkl'
+    vec_filename = 'models/count_vectorizer.pkl'
     pickle.dump(vectorizer,open(vec_filename,'wb'))
 
 
@@ -242,7 +242,7 @@ def train_classifier(docs):
     evaluate_classifier("Decision Tree\tTRAIN\t",decision_tree_classifier,vectorizer,X_train,y_train)
     evaluate_classifier("Decision Tree\tTEST\t",decision_tree_classifier,vectorizer,X_test,y_test)
 
-    clf_filename='decision_tree_classifier.pkl'
+    clf_filename='models/decision_tree_classifier.pkl'
     pickle.dump(decision_tree_classifier, open(clf_filename,'wb'))
 
 
@@ -271,7 +271,7 @@ def train_classifier(docs):
     evaluate_classifier("KNN Classifier\tTRAIN\t",knn_classifier,vectorizer,X_train,y_train)
     evaluate_classifier("KNN Classifier\tTEST\t",knn_classifier,vectorizer,X_test,y_test)
 
-    clf_filename='knn_classifier.pkl'
+    clf_filename='models/knn_classifier.pkl'
     pickle.dump(knn_classifier, open(clf_filename,'wb'))
 
 
@@ -282,10 +282,10 @@ def classify(text):
     Parametre
         text : String
     '''
-    clf_filename = 'naive_bayes_classifier.pkl'
+    clf_filename = 'models/naive_bayes_classifier.pkl'
     nb_clf = pickle.load(open(clf_filename,'rb'))
 
-    vec_filename = 'count_vectorizer.pkl'
+    vec_filename = 'models/count_vectorizer.pkl'
     vectorizer =pickle.load(open(vec_filename,'rb'))
 
     pred = nb_clf.predict(vectorizer.transform([text]))
@@ -296,10 +296,10 @@ def findFalsePredict():
     '''
     Kaydedilen modeller üzerinden tahmin işlemlerleri ve gerçek değerler karşılaştırılarak yanlış tahmin edilen verilerin belirlenmesini sağlar.
     '''
-    clf_filename = 'naive_bayes_classifier.pkl'
+    clf_filename = 'models/naive_bayes_classifier.pkl'
     nb_clf = pickle.load(open(clf_filename,'rb'))
 
-    vec_filename = 'count_vectorizer.pkl'
+    vec_filename = 'models/count_vectorizer.pkl'
     vectorizer =pickle.load(open(vec_filename,'rb'))
 
     wronglist = [] # Yanlış tahmin edilen cümleler

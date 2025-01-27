@@ -101,7 +101,7 @@ altındaki word_tokenize yapısından faydalanılmıştır. Daha sonra Vectorize
 uygulanmıştır. Bunun için Sklearn içerisindeki CountVectorizer kütüphanesi kullanılmıştır. Bu 
 işlemlerden sonra veri model eğitimine hazır hale gelmiştir.
 
-![İşlem adımları](images/1.PNG)
+![İşlem adımları](docs/images/1.PNG)
 
 Ön işlem adımlarından geçen veri model eğitimi ve test aşamalarında kullanılmak için 
 iki kısma ayrılmıştır. Bu aşamada 4089 adet veriden oluşan veri setimiz %80 eğitim verisi, %20 
@@ -120,15 +120,15 @@ kısmından oluşan eğitim verisi üzerinde 5-fold cross-validation uygulanarak
 sonra geri kalan %20’lik test verisi üzerinde tahmin işlemi gerçekleştirilerek test başarısı 
 belirlenmiştir.
 
-![Veri setinde kullanılan kanunlar ve kanun sayıları](images/2.PNG)
+![Veri setinde kullanılan kanunlar ve kanun sayıları](docs/images/2.PNG)
 
 Başarı ölçme metriği olarak accuracy, recall, precision ve f1-score kullanılmıştır. Birden 
 fazla başarı ölçme metriği kullanarak dengesiz veri setlerinde karşımıza çıkabilecek yanıltıcı 
 sonuçların tespit edilmesi hedeflenmiştir.
 
-![Model başarı tablosu](images/3.PNG)
+![Model başarı tablosu](docs/images/3.PNG)
 
-![Model eğitimi sonucunda doğru ve yanlış sınıflandırılan metinlere örnek](images/4.PNG)
+![Model eğitimi sonucunda doğru ve yanlış sınıflandırılan metinlere örnek](docs/images/4.PNG)
 
 Doğru ve yanlış sınıflandırılmış olan metinlerden birer tanesi yukarıda verilen resimde gösterilmiştir. 
 Verilen örnek metinler incelendiğinde doğru sınıflandırma yapılan metinde ortak, şirket, 
