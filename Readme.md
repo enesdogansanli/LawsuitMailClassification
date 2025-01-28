@@ -7,14 +7,7 @@ Bu projenin amacı hukuk bürolarına genel ve dava için önem arz eden hukuki 
 **Python --version 3.9.13**
 
 ```
-pip install pandas
-pip install numpy
-pip install scikit-learn
-pip install matplotlib
-pip install nltk
-pip install pickle5
-pip install collection
-pip install regex
+pip install -r requirements.txt
 ```
 
 ## İÇİNDEKİLER
